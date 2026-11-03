@@ -1,8 +1,9 @@
 /* ============================================================
    Me Leva
-   - A mãe escolhe o atalho (figura ou voz) e confirma.
-   - O pedido vai para o filho pelo ntfy (serviço gratuito de avisos).
-   - O filho abre o Uber já preenchido e responde com o carro.
+   - A mãe escolhe o lugar (figura ou voz) e confirma.
+   - Modo "uber" (padrão): o Uber abre no celular dela já com saída e chegada,
+     e o filho é avisado pelo ntfy para acompanhar e mandar os dados do carro.
+   - Modo "filho": o pedido vai para o filho, que abre o Uber e responde com o carro.
    - O app da mãe fala o carro, a cor, a placa e o tempo.
    Tudo fica salvo só no celular (localStorage). Sem servidor próprio.
    ============================================================ */
@@ -15,6 +16,7 @@
   const CHAVE = "me-leva:v1";
   const BASE = location.origin + location.pathname;
   const AQUI = "aqui"; // "onde ela estiver" (usa o GPS na hora)
+  const MAX_LUGARES = 40, MAX_ATALHOS = 30; // cabem folgados no celular, mesmo com foto em todos
   const EMOJIS = ["🏠", "👭", "💃", "🕺", "⛪", "🏥", "💊", "🛒", "💈", "🍽️", "🎉", "🎶", "🏦", "🚌", "🌳", "🏖️", "👨‍👩‍👧", "🧓", "🐶", "☕", "🎂", "🛍️", "🏡", "📍"];
   const CORES = ["#5B3DF5", "#FF6B5A", "#12A150", "#F59E0B", "#0EA5E9", "#E04F8F", "#8B5E3C", "#1D1A2B"];
   const CORES_CARRO = [["branco", "#FFFFFF"], ["prata", "#C9CDD3"], ["cinza", "#6B7280"], ["preto", "#111111"], ["vermelho", "#D92D20"], ["azul", "#1E4FBF"], ["verde", "#12A150"], ["bege", "#D8C3A5"]];
@@ -47,11 +49,12 @@
   const lugar = (id) => (id === AQUI ? { id: AQUI, nome: "Onde ela estiver", nomeMae: "Onde você está", ico: "📍", cor: "#0EA5E9" } : (cfg.lugares || []).find((l) => l.id === id));
   const topico = (tipo) => `meleva-${cfg.canal}-${tipo}`; // p = pedidos (mãe → filho), r = respostas (filho → mãe)
   const nomeFilho = () => (cfg.filho && cfg.filho.nome) || "meu filho";
+  const modoUber = () => (cfg.modo || "uber") === "uber";
 
   function dadosDemo() {
     const L = (id, nome, ico, cor, end, lat, lng, apelidos) => ({ id, nome, ico, cor, end, lat, lng, apelidos });
     return {
-      canal: "demo", papel: "mae", nome: "Maria", pin: "1234",
+      canal: "demo", papel: "mae", modo: "filho", nome: "Maria", pin: "1234",
       filho: { nome: "Marcos", tel: "11987654321" },
       lugares: [
         L("casa", "Minha casa", "🏠", "#12A150", "Rua das Flores, 120 - Centro, Taboão da Serra - SP", -23.6094, -46.759, "casa, minha casa, voltar, embora"),
@@ -195,10 +198,12 @@
     $("#mic-dica").textContent = Reconhecer ? "Toque e fale" : "Toque na figura";
     $("#microfone").hidden = !Reconhecer;
     const box = $("#atalhos"); box.textContent = "";
+    const muitos = (cfg.rotas || []).length > 6;
+    box.classList.toggle("atalhos--muitos", muitos);
     (cfg.rotas || []).forEach((r, i) => {
       const d = destino(r) || {}, ps = r.paradas.map(lugar).filter(Boolean);
       const foto = d.foto && !r.icoProprio ? d.foto : null;
-      const b = h("button", { class: "atalho" + (foto ? " atalho--foto" : ""), style: `--cor:${d.cor || "#5B3DF5"}` + (i === 0 && (cfg.rotas.length % 2) ? ";grid-column:1/-1;aspect-ratio:2/1.05" : ""), onclick: () => abrirConfirmar(r), "aria-label": r.nome },
+      const b = h("button", { class: "atalho" + (foto ? " atalho--foto" : ""), style: `--cor:${d.cor || "#5B3DF5"}` + (i === 0 && !muitos && (cfg.rotas.length % 2) ? ";grid-column:1/-1;aspect-ratio:2/1.05" : ""), onclick: () => abrirConfirmar(r), "aria-label": r.nome },
         foto ? h("span", { class: "atalho__fundo", style: `background-image:url("${foto}")` }) : null,
         h("span", { class: "atalho__ico", "aria-hidden": "true" }, r.ico || d.ico || "📍"),
         h("span", { class: "atalho__nome" }, r.nome),
@@ -230,11 +235,14 @@
   function frase(r) {
     const ps = r.paradas.map(lugar).filter(Boolean), nome = (l) => (l.id === AQUI ? "onde você está" : l.nome);
     const meio = ps.slice(1, -1).map(nome);
+    if (modoUber()) return `Vamos para ${nome(ps[ps.length - 1])}${meio.length ? ", passando na " + meio.join(" e na ") : ""}. Toque no verde para abrir o Uber, ou no vermelho para voltar.`;
     return `Vou pedir o carro. Saindo de ${nome(ps[0])}${meio.length ? ", passando na " + meio.join(" e na ") : ""}, até ${nome(ps[ps.length - 1])}. Toque no verde para pedir, ou no vermelho para voltar.`;
   }
   function desenharConfirmar() {
     const r = rotaPendente, ps = r.paradas.map(lugar).filter(Boolean);
     $("#conf-titulo").textContent = r.nome;
+    $(".confirmar__rotulo").textContent = modoUber() ? "Vou abrir o Uber" : "Vou pedir o carro";
+    $(".decidir__sim span").textContent = modoUber() ? "Sim, abrir Uber" : "Sim, pedir";
     const ol = $("#conf-caminho"); ol.textContent = "";
     ps.forEach((l, i) => {
       const ico = h("span", { class: "caminho__ico" + (l.foto ? " caminho__ico--foto" : ""), style: `--cor:${l.cor}`, "aria-hidden": "true" }, l.ico); fundoFoto(ico, l.foto);
@@ -250,16 +258,41 @@
       navigator.geolocation.getCurrentPosition((p) => ok({ lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6) }), () => ok(null), { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
     });
   }
+  function paradasDoPedido(r, gps) {
+    return r.paradas.map(lugar).filter(Boolean).map((l) => ({
+      nome: l.id === AQUI ? (gps ? "Onde ela está agora" : "Onde ela está (sem GPS)") : l.nome, ico: l.ico, cor: l.cor,
+      end: l.id === AQUI ? "" : l.end || "", lat: l.id === AQUI ? gps?.lat : l.lat, lng: l.id === AQUI ? gps?.lng : l.lng, aqui: l.id === AQUI || undefined,
+    }));
+  }
+  /* Abre o Uber com saída e chegada prontas. Precisa acontecer direto no toque,
+     senão o Android abre o site em vez do aplicativo do Uber. */
+  function abrirUber(p) {
+    const url = linkUber(p);
+    if (demo()) { aviso("Na demonstração o Uber não abre"); return; }
+    const w = window.open(url, "_blank", "noopener");
+    if (!w) location.href = url;
+  }
+  function pedirPeloUber(r) {
+    const pedido = { v: 1, id: uid(), t: Date.now(), de: cfg.nome || "Mãe", rota: r.nome, uber: true, paradas: paradasDoPedido(r, null) };
+    cfg.pedido = { ...pedido, estado: "uber" }; salvar();
+    falar("Abrindo o Uber.");
+    abrirUber(pedido);
+    location.hash = "#/esperando";
+    // avisa o filho para acompanhar (com a localização dela, se tiver GPS)
+    (r.paradas.includes(AQUI) ? posicao() : Promise.resolve(null)).then((gps) => {
+      const p = { ...pedido, paradas: paradasDoPedido(r, gps) };
+      if (cfg.pedido?.id === p.id) { cfg.pedido.paradas = p.paradas; salvar(); }
+      return publicarPedido(p);
+    }).catch(() => {});
+  }
   async function enviarPedido() {
     const r = rotaPendente; if (!r) return irInicio();
+    if (modoUber()) return pedirPeloUber(r);
     const btn = $('[data-acao="enviar-pedido"]'); btn.disabled = true;
     falar("Certo! Vou avisar o " + nomeFilho() + ".");
     let gps = null;
     if (r.paradas.includes(AQUI)) gps = await posicao();
-    const paradas = r.paradas.map(lugar).filter(Boolean).map((l) => ({
-      nome: l.id === AQUI ? (gps ? "Onde ela está agora" : "Onde ela está (sem GPS)") : l.nome, ico: l.ico, cor: l.cor,
-      end: l.id === AQUI ? "" : l.end || "", lat: l.id === AQUI ? gps?.lat : l.lat, lng: l.id === AQUI ? gps?.lng : l.lng, aqui: l.id === AQUI || undefined,
-    }));
+    const paradas = paradasDoPedido(r, gps);
     const pedido = { v: 1, id: uid(), t: Date.now(), de: cfg.nome || "Mãe", rota: r.nome, paradas };
     cfg.pedido = { ...pedido, estado: "enviado" }; salvar();
     try { await publicarPedido(pedido); }
@@ -286,6 +319,10 @@
   function publicarPedido(p) {
     if (demo()) return demoFilhoResponde(p);
     const app = BASE + "#/filho/" + b64.para(p);
+    if (p.uber) return publicar({
+      topic: topico("p"), title: `${p.de} abriu o Uber: ${p.rota}`, message: textoPedido(p) + "\n\nEla está chamando o carro pelo celular dela. Quando souber o carro, toque em Avisar o carro.", tags: ["taxi"], priority: 4, click: app,
+      actions: [{ action: "view", label: "Avisar o carro", url: app }],
+    });
     return publicar({
       topic: topico("p"), title: `${p.de} quer ir: ${p.rota}`, message: textoPedido(p), tags: ["taxi"], priority: 5, click: app,
       actions: [{ action: "view", label: "Abrir no Uber", url: linkUber(p), clear: false }, { action: "view", label: "Responder", url: app }],
@@ -313,13 +350,18 @@
   function desenharEsperando(primeira) {
     const p = cfg.pedido; if (!p) return irInicio();
     const tela = $("#v-esperando"), est = p.estado, f = nomeFilho();
-    const ordem = ["enviado", "visto", "carro"], idx = { falhou: -1, enviado: 0, visto: 1, chamando: 1, ligo: 1, carro: 2 }[est] ?? 0;
+    const uber = !!p.uber, idx = { falhou: -1, uber: 0, enviado: 0, visto: 1, chamando: 1, ligo: 1, carro: 2 }[est] ?? 0;
     $$("#etapas li").forEach((li, i) => { li.classList.toggle("feito", i <= idx); li.classList.toggle("agora", i === idx + 1); });
-    $("#etapa-visto").textContent = f + " viu";
+    $("#etapa-enviado").textContent = uber ? "Uber aberto" : "Pedido enviado";
+    $("#etapa-visto").textContent = uber ? f + " acompanhando" : f + " viu";
+    $("#esp-uber").hidden = !uber || est === "carro";
+    $("#esp-sair").textContent = uber ? "Voltar para o início" : "Cancelar pedido";
     tela.classList.toggle("chegando", est === "carro");
     const titulo = $("#esp-titulo"), sub = $("#esp-sub");
-    $("#carro").hidden = est !== "carro"; $("#esp-entrei").hidden = est !== "carro";
-    if (est === "falhou") { titulo.textContent = "Não consegui avisar"; sub.textContent = `Parece que está sem internet. Ligue para o ${f}.`; }
+    $("#carro").hidden = est !== "carro"; $("#esp-entrei").hidden = est !== "carro" && !uber;
+    if (est === "uber") { titulo.textContent = "Confirme no Uber"; sub.textContent = `No Uber, toque no botão preto grande lá embaixo. Quando o ${f} me avisar, eu falo qual carro vem.`; }
+    else if (uber && (est === "visto" || est === "chamando")) { titulo.textContent = `O ${f} está acompanhando`; sub.textContent = "Quando o carro for aceito, eu falo qual é."; }
+    else if (est === "falhou") { titulo.textContent = "Não consegui avisar"; sub.textContent = `Parece que está sem internet. Ligue para o ${f}.`; }
     else if (est === "enviado") { titulo.textContent = `Avisei o ${f}`; sub.textContent = "Espere um pouquinho, ele vai chamar o carro."; }
     else if (est === "visto" || est === "chamando") { titulo.textContent = `O ${f} está chamando o carro`; sub.textContent = "Já, já eu falo qual carro vem buscar."; }
     else if (est === "ligo") { titulo.textContent = `O ${f} vai te ligar`; sub.textContent = "Fique perto do telefone."; }
@@ -338,7 +380,8 @@
     const t = {
       falhou: `Não consegui avisar o ${f}. Parece que está sem internet. Toque no botão verde para ligar para ele.`,
       enviado: `Avisei o ${f}. Espere um pouquinho que ele vai chamar o carro.`,
-      visto: `O ${f} viu o seu pedido e está chamando o carro.`, chamando: `O ${f} está chamando o carro.`,
+      uber: `Abri o Uber. Lá no Uber, toque no botão preto grande, embaixo, para chamar o carro. Se o Uber não abriu, toque no botão roxo. Quando o ${f} me avisar, eu falo qual carro vem buscar.`,
+      visto: p.uber ? `O ${f} está acompanhando a sua corrida.` : `O ${f} viu o seu pedido e está chamando o carro.`, chamando: `O ${f} está chamando o carro.`,
       ligo: `O ${f} vai te ligar. Fique perto do telefone.`,
       carro: `Seu carro está chegando! É um ${[c.modelo, c.cor].filter(Boolean).join(" ")}. ${c.placa ? "A placa é: " + soletrar(c.placa) + "." : ""} ${c.min ? "Chega em " + c.min + " minutos." : ""} Confira a placa antes de entrar.`,
     }[p.estado];
@@ -346,7 +389,7 @@
   }
   function aplicarResposta(d) {
     const p = cfg.pedido; if (!p || d.pedido !== p.id) return;
-    const ordem = { enviado: 0, visto: 1, chamando: 1, ligo: 1, carro: 2 };
+    const ordem = { uber: 0, enviado: 0, visto: 1, chamando: 1, ligo: 1, carro: 2 };
     if ((ordem[d.tipo] ?? -1) < (ordem[p.estado] ?? 0) && p.estado !== "falhou") return;
     p.estado = d.tipo; if (d.tipo === "carro") p.carro = { modelo: d.modelo, cor: d.cor, placa: d.placa, min: d.min };
     salvar(); desenharEsperando(false); falaEsperando();
@@ -356,7 +399,7 @@
     const p = cfg.pedido; if (!p) return;
     falaEsperando();
     // se em 4 minutos ninguém viu, oferece ligar
-    alertaDemora = setTimeout(() => { if (cfg.pedido?.estado === "enviado") falar(`O ${nomeFilho()} ainda não viu o pedido. Toque no botão verde para ligar para ele.`); }, 4 * 60e3);
+    alertaDemora = setTimeout(() => { if (cfg.pedido?.estado === "enviado" && !cfg.pedido.uber) falar(`O ${nomeFilho()} ainda não viu o pedido. Toque no botão verde para ligar para ele.`); }, 4 * 60e3);
     if (demo()) return;
     let desde = Math.floor(p.t / 1000) - 5;
     const vez = async () => {
@@ -367,7 +410,7 @@
       } catch (e) { /* sem internet: tenta de novo */ }
     };
     // se o envio falhou, tenta reenviar quando a internet voltar
-    if (p.estado === "falhou") publicarPedido(p).then(() => { cfg.pedido.estado = "enviado"; salvar(); desenharEsperando(false); falaEsperando(); }).catch(() => {});
+    if (p.estado === "falhou" && !p.uber) publicarPedido(p).then(() => { cfg.pedido.estado = "enviado"; salvar(); desenharEsperando(false); falaEsperando(); }).catch(() => {});
     vez(); relogioRespostas = setInterval(vez, 4000);
   }
 
@@ -432,7 +475,7 @@
       }));
       const temParada = p.paradas.length > 2;
       const acoes = h("div", { class: "pedido__acoes" },
-        h("a", { class: "botao botao--uber", href: linkUber(p), target: "_blank", rel: "noopener", onclick: () => { if (respondidos[p.id] !== "carro") { marcarResposta(p.id, "chamando"); responder({ tipo: "chamando", pedido: p.id }).catch(() => {}); } } }, "Abrir no Uber"),
+        p.uber ? null : h("a", { class: "botao botao--uber", href: linkUber(p), target: "_blank", rel: "noopener", onclick: () => { if (respondidos[p.id] !== "carro") { marcarResposta(p.id, "chamando"); responder({ tipo: "chamando", pedido: p.id }).catch(() => {}); } } }, "Abrir no Uber"),
         h("button", { class: "botao botao--claro", onclick: () => { marcarResposta(p.id, "ligo"); responder({ tipo: "ligo", pedido: p.id }).then(() => aviso("Avisei que você vai ligar"), () => aviso("Sem internet")); } }, "Vou ligar"),
         h("button", { class: "botao botao--claro", onclick: (e) => { const f = e.currentTarget.closest(".pedido").querySelector(".responder"); f.hidden = !f.hidden; if (!f.hidden) f.querySelector("input").focus(); } }, "Avisar o carro"));
       let corEscolhida = "";
@@ -452,7 +495,8 @@
       box.append(h("article", { class: "pedido" + (antigo ? " pedido--antigo" : "") },
         h("div", { class: "pedido__cabeca" }, h("div", null, h("b", null, p.rota), h("small", null, `${p.de} · ${horaDe(p.t)}`)), h("span", { class: "etiqueta " + estado[1] }, estado[0])),
         trajeto,
-        temParada ? h("p", { class: "ajuda" }, "No Uber, toque em “+” para adicionar a parada e use “Pedir para outra pessoa” com o telefone dela.") : null,
+        p.uber ? h("p", { class: "ajuda" }, `${p.de} já abriu o Uber no celular dela. Se ela está no seu Perfil Família do Uber, você vê o carro no seu app: toque em “Avisar o carro” para o app dela falar o modelo, a cor e a placa.`)
+          : temParada ? h("p", { class: "ajuda" }, "No Uber, toque em “+” para adicionar a parada e use “Pedir para outra pessoa” com o telefone dela.") : null,
         antigo ? null : acoes, antigo ? null : form));
     });
   }
@@ -491,14 +535,22 @@
   /* ---------- ajustes ---------- */
   function desenharAjustes() {
     $("#cfg-nome").value = cfg.nome || ""; $("#cfg-filho").value = cfg.filho?.nome || ""; $("#cfg-tel").value = cfg.filho?.tel || ""; $("#cfg-pin").value = cfg.pin || "";
+    $$('input[name="cfg-modo"]').forEach((i) => (i.checked = i.value === (cfg.modo || "uber")));
+    $("#cont-rotas").textContent = `${(cfg.rotas || []).length} de ${MAX_ATALHOS}`;
+    $("#cont-lugares").textContent = `${(cfg.lugares || []).length} de ${MAX_LUGARES}`;
     const fp = $("#foto-mae-prev"), fb = $("#foto-mae-btn"); fp.textContent = cfg.foto ? "" : "👵"; fb.style.backgroundImage = cfg.foto ? `url("${cfg.foto}")` : "";
     const rotas = $("#cfg-rotas"); rotas.textContent = "";
-    (cfg.rotas || []).forEach((r) => {
+    const mover = (i, d) => { const j = i + d, rs = cfg.rotas; if (j < 0 || j >= rs.length) return; [rs[i], rs[j]] = [rs[j], rs[i]]; salvar(); desenharAjustes(); };
+    (cfg.rotas || []).forEach((r, i, todas) => {
       const ps = r.paradas.map(lugar).filter(Boolean), d = destino(r) || {};
       const mini = h("span", { class: "mini", style: `--cor:${d.cor || "#5B3DF5"}` }, r.ico || d.ico);
-      rotas.append(h("li", null, h("button", { onclick: () => (location.hash = "#/rota/" + r.id) }, mini, h("div", null, h("b", null, r.nome), h("small", null, ps.map((l) => l.ico + " " + l.nome).join("  ›  "))), h("span", { class: "seta" }, "›"))));
+      rotas.append(h("li", { class: "com-ordem" },
+        h("button", { onclick: () => (location.hash = "#/rota/" + r.id) }, mini, h("div", null, h("b", null, r.nome), h("small", null, ps.map((l) => (l.id === AQUI ? "📍 Onde ela estiver" : l.ico + " " + l.nome)).join("  ›  "))), h("span", { class: "seta" }, "›")),
+        h("span", { class: "ordem" },
+          h("button", { type: "button", "aria-label": "Mais para cima", disabled: i === 0, onclick: () => mover(i, -1) }, "↑"),
+          h("button", { type: "button", "aria-label": "Mais para baixo", disabled: i === todas.length - 1, onclick: () => mover(i, 1) }, "↓"))));
     });
-    if (!rotas.children.length) rotas.append(h("li", { class: "ajuda" }, "Nenhum atalho ainda. Cadastre primeiro os lugares e depois crie os atalhos."));
+    if (!rotas.children.length) rotas.append(h("li", { class: "ajuda" }, "Nenhum atalho ainda. Cada lugar que você cadastrar vira um atalho aqui."));
     const lugares = $("#cfg-lugares"); lugares.textContent = "";
     (cfg.lugares || []).forEach((l) => {
       const mini = h("span", { class: "mini", style: `--cor:${l.cor}` }, l.foto ? "" : l.ico); fundoFoto(mini, l.foto);
@@ -514,6 +566,7 @@
     salvar();
   }
   ["#cfg-nome", "#cfg-filho", "#cfg-tel", "#cfg-pin"].forEach((s) => $(s).addEventListener("change", lerAjustes));
+  $$('input[name="cfg-modo"]').forEach((i) => i.addEventListener("change", () => { if (i.checked) { cfg.modo = i.value; salvar(); } }));
   function sairAjustes() {
     lerAjustes();
     const falta = !cfg.nome ? "o nome dela" : !(cfg.rotas || []).length ? "pelo menos um atalho" : !cfg.pin ? "a senha dos ajustes (4 números)" : null;
@@ -544,7 +597,7 @@
       const lado = 360, k = Math.min(1, lado / Math.max(img.width, img.height)), c = document.createElement("canvas");
       c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
       c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
-      aoTerminar(c.toDataURL("image/jpeg", .82));
+      aoTerminar(c.toDataURL("image/jpeg", .78));
     };
     img.src = url; input.value = "";
   }
@@ -557,6 +610,7 @@
     rascunho = l ? { ...l } : { id: uid(), nome: "", ico: "🏠", cor: CORES[(cfg.lugares || []).length % CORES.length], apelidos: "" };
     $("#lugar-titulo").textContent = l ? "Editar lugar" : "Novo lugar";
     $("#lugar-excluir").hidden = !l;
+    $("#lugar-atalho").checked = l ? (cfg.rotas || []).some((r) => r.auto === l.id) : (cfg.rotas || []).length < MAX_ATALHOS;
     $("#lugar-nome").value = rascunho.nome; $("#lugar-apelidos").value = rascunho.apelidos || ""; $("#lugar-busca").value = ""; $("#lugar-resultados").textContent = "";
     pintarLugar();
   }
@@ -607,15 +661,26 @@
     const r = rascunho; r.nome = $("#lugar-nome").value.trim(); r.apelidos = $("#lugar-apelidos").value.trim();
     if (!r.nome) return aviso("Dê um nome ao lugar");
     if (r.lat == null) return aviso("Falta o endereço: busque ou use “Estou neste lugar agora”");
-    cfg.lugares = cfg.lugares || [];
-    const i = cfg.lugares.findIndex((l) => l.id === r.id); if (i >= 0) cfg.lugares[i] = r; else cfg.lugares.push(r);
+    cfg.lugares = cfg.lugares || []; cfg.rotas = cfg.rotas || [];
+    const i = cfg.lugares.findIndex((l) => l.id === r.id);
+    if (i < 0 && cfg.lugares.length >= MAX_LUGARES) return aviso(`Já são ${MAX_LUGARES} lugares. Exclua um que ela não usa mais.`);
+    if (i >= 0) cfg.lugares[i] = r; else cfg.lugares.push(r);
+    // atalho direto: sai de onde ela estiver e vai até este lugar
+    const auto = cfg.rotas.find((x) => x.auto === r.id);
+    if ($("#lugar-atalho").checked) {
+      if (auto) Object.assign(auto, { nome: r.nome, ico: r.ico });
+      else if (cfg.rotas.length < MAX_ATALHOS) cfg.rotas.push({ id: uid(), nome: r.nome, ico: r.ico, paradas: [AQUI, r.id], auto: r.id });
+      else aviso(`Lugar salvo, mas já são ${MAX_ATALHOS} atalhos na tela dela.`);
+    } else if (auto) cfg.rotas = cfg.rotas.filter((x) => x !== auto);
     salvar(); history.back();
   }
   function excluirLugar() {
-    const usado = (cfg.rotas || []).filter((r) => r.paradas.includes(rascunho.id));
+    const usado = (cfg.rotas || []).filter((r) => r.auto !== rascunho.id && r.paradas.includes(rascunho.id));
     if (usado.length) return aviso("Este lugar está no atalho “" + usado[0].nome + "”. Tire de lá primeiro.");
     if (!confirm("Excluir este lugar?")) return;
-    cfg.lugares = cfg.lugares.filter((l) => l.id !== rascunho.id); salvar(); history.back();
+    cfg.lugares = cfg.lugares.filter((l) => l.id !== rascunho.id);
+    cfg.rotas = (cfg.rotas || []).filter((r) => r.auto !== rascunho.id);
+    salvar(); history.back();
   }
 
   /* ---------- editar atalho ---------- */
@@ -636,6 +701,7 @@
     });
     if (!r.paradas.length) ol.append(h("li", { class: "ajuda", style: "display:block" }, "Toque nos lugares abaixo na ordem do caminho."));
     const add = $("#rota-adicionar"); add.textContent = "";
+    if (modoUber() && r.paradas.length > 2) add.append(h("p", { class: "ajuda alerta" }, "O Uber abre só com a saída e a chegada. As paradas do meio precisam ser colocadas no Uber (no “+”)."));
     if (r.paradas.length >= 4) { add.append(h("p", { class: "ajuda" }, "Máximo de 4 pontos (saída, 2 paradas e chegada).")); return; }
     [AQUI, ...(cfg.lugares || []).map((l) => l.id)].forEach((pid) => { const l = lugar(pid); if (pid === AQUI && r.paradas.length) return; add.append(h("button", { type: "button", onclick: () => { r.paradas.push(pid); pintarRota(); } }, l.ico, " " + l.nome)); });
     if (!(cfg.lugares || []).length) add.append(h("p", { class: "ajuda" }, "Cadastre os lugares primeiro."));
@@ -645,6 +711,7 @@
     if (r.paradas.length < 2) return aviso("O caminho precisa de saída e chegada");
     if (!r.nome) { const d = lugar(r.paradas[r.paradas.length - 1]); r.nome = d.nome; }
     if (!r.ico) r.ico = lugar(r.paradas[r.paradas.length - 1]).ico;
+    if (r.auto && (r.paradas.length !== 2 || r.paradas[0] !== AQUI || r.paradas[1] !== r.auto)) delete r.auto;
     cfg.rotas = cfg.rotas || [];
     const i = cfg.rotas.findIndex((x) => x.id === r.id); if (i >= 0) cfg.rotas[i] = r; else cfg.rotas.push(r);
     salvar(); history.back();
@@ -673,21 +740,22 @@
   const acoes = {
     demo: () => { cfg = dadosDemo(); salvar(); irInicio(); },
     configurar: () => (location.hash = "#/papel"),
-    "papel-mae": () => { cfg = { papel: "mae", canal: canalNovo(), nome: "", filho: { nome: "", tel: "" }, lugares: [], rotas: [], pin: "" }; salvar(); desbloqueado = true; location.hash = "#/ajustes"; },
+    "papel-mae": () => { cfg = { papel: "mae", modo: "uber", canal: canalNovo(), nome: "", filho: { nome: "", tel: "" }, lugares: [], rotas: [], pin: "" }; salvar(); desbloqueado = true; location.hash = "#/ajustes"; },
     "papel-filho": () => { aviso("No celular dela, abra os ajustes e toque em “Enviar link pro meu celular”."); },
     "ouvir-confirmar": () => rotaPendente && falar(frase(rotaPendente)),
     "cancelar-confirmar": () => { speechSynthesis?.cancel(); rotaPendente = null; irInicio(); },
     "enviar-pedido": enviarPedido,
     "ouvir-esperando": falaEsperando,
     entrei: () => { const p = cfg.pedido; if (!p) return; publicarEvento("entrou", p.id).catch(() => {}); p.estado = "entrou"; salvar(); falar("Boa viagem! Divirta-se."); irInicio(); },
-    "cancelar-pedido": () => { const p = cfg.pedido; if (!p) return irInicio(); if (!confirm("Cancelar o pedido?")) return; publicarEvento("cancelou", p.id).catch(() => {}); p.estado = "cancelado"; salvar(); falar("Pedido cancelado."); irInicio(); },
+    "abrir-uber": () => { const p = cfg.pedido; if (p) { falar("Abrindo o Uber."); abrirUber(p); } },
+    "cancelar-pedido": () => { const p = cfg.pedido; if (!p) return irInicio(); if (p.uber) { p.estado = "cancelado"; salvar(); speechSynthesis?.cancel(); return irInicio(); } if (!confirm("Cancelar o pedido?")) return; publicarEvento("cancelou", p.id).catch(() => {}); p.estado = "cancelado"; salvar(); falar("Pedido cancelado."); irInicio(); },
     "fechar-aviso-ntfy": () => { try { localStorage.setItem("me-leva:ntfy-ok", "1"); } catch (e) {} $("#aviso-ntfy").hidden = true; },
     desconectar: () => { if (demo()) return aviso("Use “Sair” na barra de cima"); if (!confirm("Parar de receber os pedidos neste celular?")) return; cfg = null; try { localStorage.removeItem(CHAVE); } catch (e) {} irInicio(); },
     "sair-ajustes": sairAjustes,
     "compartilhar-link": compartilharLink,
     "testar-aviso": testarAviso,
-    "nova-rota": () => { lerAjustes(); location.hash = "#/rota/novo"; },
-    "novo-lugar": () => { lerAjustes(); location.hash = "#/lugar/novo"; },
+    "nova-rota": () => { lerAjustes(); if ((cfg.rotas || []).length >= MAX_ATALHOS) return aviso(`Já são ${MAX_ATALHOS} atalhos. Exclua um que ela não usa mais.`); location.hash = "#/rota/novo"; },
+    "novo-lugar": () => { lerAjustes(); if ((cfg.lugares || []).length >= MAX_LUGARES) return aviso(`Já são ${MAX_LUGARES} lugares. Exclua um que ela não usa mais.`); location.hash = "#/lugar/novo"; },
     "apagar-tudo": () => { if (!confirm("Apagar todos os lugares, atalhos e ajustes deste celular?")) return; cfg = null; desbloqueado = false; try { localStorage.removeItem(CHAVE); } catch (e) {} irInicio(); },
     "buscar-endereco": buscarEndereco,
     "usar-gps": usarGps,
@@ -701,6 +769,11 @@
     const ir = e.target.closest("[data-ir]"); if (ir) { e.preventDefault(); location.hash = ir.dataset.ir; }
   });
   $("#lugar-busca").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); buscarEndereco(); } });
+
+  // quando ela volta do Uber para o app, lembra em voz alta o que fazer
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && document.body.dataset.tela === "esperando" && cfg?.pedido?.uber) falaEsperando();
+  });
 
   /* ---------- início ---------- */
   if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
