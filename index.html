@@ -207,9 +207,11 @@
       <button class="botao botao--claro botao--bloco" data-acao="usar-gps"><span aria-hidden="true">📍</span> Estou neste lugar agora</button>
       <ul class="resultados" id="lugar-resultados"></ul>
       <div class="mapa" id="lugar-mapa" hidden><div class="mapa__tiles" id="lugar-tiles"></div><span class="mapa__pino" aria-hidden="true"></span><small class="mapa__credito">© OpenStreetMap</small></div>
+      <p class="ajuda" id="lugar-mapa-dica" hidden>Toque no mapa para ajustar o ponto exato onde o carro deve parar (ex.: a entrada da viela).</p>
       <p class="endereco-escolhido" id="lugar-endereco"></p>
     </div>
     <div class="grupo">
+      <label class="opcao"><input type="checkbox" id="lugar-casa"><span><b>É a casa dela</b><small>Quando ela estiver em casa, o carro vem buscar neste ponto marcado, e não pelo GPS. Bom para viela ou entrada difícil.</small></span></label>
       <label class="opcao"><input type="checkbox" id="lugar-atalho"><span><b>Mostrar na tela dela</b><small>Vira um botão: ela toca e vai de onde estiver até este lugar.</small></span></label>
     </div>
     <div class="grupo">
