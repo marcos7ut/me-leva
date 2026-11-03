@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Me Leva — chamar carro sem precisar ler</title>
+<meta name="description" content="App para quem não lê: escolhe o lugar pela figura ou pela voz e um familiar recebe o pedido pronto para chamar o carro.">
+<meta name="theme-color" content="#FBF7F2">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:title" content="Me Leva — chamar carro sem precisar ler">
+<meta property="og:description" content="Escolhe o lugar pela figura ou pela voz. Um familiar recebe o pedido pronto e avisa, falando, qual carro vem buscar.">
+<meta property="og:image" content="https://marcos7ut.github.io/me-leva/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="assets/icone.svg">
+<link rel="apple-touch-icon" href="assets/icone-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ============ BOAS-VINDAS (primeira vez) ============ -->
+  <section class="tela tela--inicio" id="v-inicio" hidden>
+    <div class="inicio__fundo" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="inicio__conteudo">
+      <img class="inicio__logo" src="assets/icone.svg" width="76" height="76" alt="">
+      <p class="selo">Feito para quem não lê</p>
+      <h1 class="inicio__titulo">Me <span>Leva</span></h1>
+      <p class="inicio__texto">Escolhe o lugar <b>pela figura ou pela voz</b>. Um familiar recebe o pedido pronto, chama o carro e o app <b>avisa falando</b> qual carro vem buscar.</p>
+      <ol class="inicio__passos">
+        <li><span>👆</span>Toca na figura ou fala “quero ir pro baile”</li>
+        <li><span>📲</span>O filho recebe o pedido com o caminho pronto</li>
+        <li><span>🔊</span>O app fala o carro, a cor e a placa</li>
+      </ol>
+      <div class="inicio__acoes">
+        <button class="botao botao--primario botao--grande" data-acao="demo">Ver demonstração</button>
+        <button class="botao botao--claro botao--grande" data-acao="configurar">Configurar para minha família</button>
+      </div>
+      <p class="inicio__rodape">Grátis · sem cadastro · seus dados ficam no seu celular</p>
+    </div>
+  </section>
+
+  <!-- ============ QUEM USA ESTE CELULAR ============ -->
+  <section class="tela tela--papel" id="v-papel" hidden>
+    <header class="topo"><button class="voltar" data-ir="#/" aria-label="Voltar">←</button><h2>De quem é este celular?</h2></header>
+    <div class="papeis">
+      <button class="papel" data-acao="papel-mae"><span class="papel__ico">👵</span><b>De quem vai pedir o carro</b><small>Ex.: minha mãe. Eu configuro os lugares aqui.</small></button>
+      <button class="papel" data-acao="papel-filho"><span class="papel__ico">🧑</span><b>De quem vai receber os pedidos</b><small>Ex.: o meu. Para chamar o carro e responder.</small></button>
+    </div>
+  </section>
+
+  <!-- ============ TELA DA MÃE ============ -->
+  <section class="tela tela--mae" id="v-mae" hidden>
+    <header class="mae__topo">
+      <div class="mae__ola">
+        <span class="mae__foto" id="mae-foto" aria-hidden="true"></span>
+        <div><small id="mae-saudacao">Boa noite</small><b id="mae-nome">Maria</b></div>
+      </div>
+      <button class="engrenagem" id="engrenagem" aria-label="Ajustes (segure para abrir)" title="Segure para abrir os ajustes">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+        <i class="engrenagem__anel" aria-hidden="true"></i>
+      </button>
+    </header>
+    <p class="mae__pergunta"><span aria-hidden="true">🚗</span> Para onde vamos?</p>
+    <div class="atalhos" id="atalhos"></div>
+    <div class="mae__base">
+      <a class="ligar" id="ligar-filho" href="#"><span aria-hidden="true">📞</span><b id="ligar-nome">Ligar</b></a>
+      <button class="microfone" id="microfone" aria-label="Falar para onde quer ir">
+        <span class="microfone__ondas" aria-hidden="true"><i></i><i></i><i></i></span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+      </button>
+      <span class="mae__dica" id="mic-dica">Toque e fale</span>
+    </div>
+    <div class="ouvindo" id="ouvindo" hidden><div class="ouvindo__caixa"><span class="ouvindo__onda" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><p id="ouvindo-texto">Pode falar…</p></div></div>
+  </section>
+
+  <!-- ============ CONFIRMAR ============ -->
+  <section class="tela tela--confirmar" id="v-confirmar" hidden>
+    <div class="confirmar__cartao">
+      <p class="confirmar__rotulo">Vou pedir o carro</p>
+      <h2 class="confirmar__titulo" id="conf-titulo">Baile com a Cida</h2>
+      <ol class="caminho" id="conf-caminho"></ol>
+      <button class="ouvir" data-acao="ouvir-confirmar"><span aria-hidden="true">🔊</span>Ouvir de novo</button>
+    </div>
+    <div class="decidir">
+      <button class="decidir__nao" data-acao="cancelar-confirmar" aria-label="Não, voltar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span>Não</span></button>
+      <button class="decidir__sim" data-acao="enviar-pedido" aria-label="Sim, pedir o carro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5L19.5 7"/></svg><span>Sim, pedir</span></button>
+    </div>
+  </section>
+
+  <!-- ============ ESPERANDO O CARRO ============ -->
+  <section class="tela tela--esperando" id="v-esperando" hidden>
+    <div class="radar" aria-hidden="true"><i></i><i></i><i></i><span>🚗</span></div>
+    <h2 class="esperando__titulo" id="esp-titulo">Avisei o Marcos</h2>
+    <p class="esperando__sub" id="esp-sub">Espere um pouquinho, ele vai chamar o carro.</p>
+    <ol class="etapas" id="etapas">
+      <li data-etapa="enviado"><i></i>Pedido enviado</li>
+      <li data-etapa="visto"><i></i><span id="etapa-visto">Marcos viu</span></li>
+      <li data-etapa="carro"><i></i>Carro a caminho</li>
+    </ol>
+    <div class="carro" id="carro" hidden>
+      <div class="carro__cor" id="carro-cor" aria-hidden="true"><span>🚗</span></div>
+      <div class="carro__info"><small>Seu carro</small><b id="carro-modelo">Onix prata</b><span class="placa" id="carro-placa">ABC1D23</span></div>
+      <div class="carro__min"><b id="carro-min">6</b><small>min</small></div>
+    </div>
+    <div class="esperando__acoes">
+      <button class="botao botao--claro botao--grande" data-acao="ouvir-esperando"><span aria-hidden="true">🔊</span> Ouvir de novo</button>
+      <a class="botao botao--verde botao--grande" id="esp-ligar" href="#"><span aria-hidden="true">📞</span> Ligar</a>
+      <button class="botao botao--primario botao--grande" id="esp-entrei" data-acao="entrei" hidden><span aria-hidden="true">✅</span> Já entrei no carro</button>
+      <button class="link-discreto" data-acao="cancelar-pedido">Cancelar pedido</button>
+    </div>
+  </section>
+
+  <!-- ============ TELA DO FILHO ============ -->
+  <section class="tela tela--filho" id="v-filho" hidden>
+    <header class="topo topo--filho">
+      <div><small>Pedidos de</small><h2 id="filho-de">Maria</h2></div>
+      <span class="ao-vivo" id="ao-vivo"><i></i>ao vivo</span>
+    </header>
+    <div class="aviso-app" id="aviso-ntfy">
+      <b>📲 Receba os pedidos mesmo com o app fechado</b>
+      <p>Instale o app gratuito <b>ntfy</b> e toque em “Assinar avisos”. Quando ela pedir, seu celular toca com o botão <b>Abrir no Uber</b> pronto.</p>
+      <div class="aviso-app__acoes"><a class="botao botao--primario" id="ntfy-loja" href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" rel="noopener">Instalar ntfy</a><a class="botao botao--claro" id="ntfy-assinar" href="#">Assinar avisos</a><button class="link-discreto" data-acao="fechar-aviso-ntfy">Já fiz</button></div>
+    </div>
+    <div id="pedidos"></div>
+    <div class="vazio" id="pedidos-vazio">
+      <span aria-hidden="true">☕</span>
+      <b>Nenhum pedido agora</b>
+      <p>Quando ela pedir um carro, o pedido aparece aqui com o caminho pronto.</p>
+    </div>
+    <button class="link-discreto desconectar" data-acao="desconectar">Desconectar este celular</button>
+  </section>
+
+  <!-- ============ AJUSTES ============ -->
+  <section class="tela tela--ajustes" id="v-ajustes" hidden>
+    <header class="topo"><button class="voltar" data-acao="sair-ajustes" aria-label="Voltar">←</button><h2>Ajustes</h2></header>
+    <div class="grupo">
+      <h3>Quem usa este celular</h3>
+      <div class="campo-foto">
+        <label class="foto-escolher" id="foto-mae-btn"><input type="file" accept="image/*" id="foto-mae" hidden><span id="foto-mae-prev">👵</span></label>
+        <label class="campo"><span>Nome</span><input id="cfg-nome" autocomplete="off" placeholder="Ex.: Maria"></label>
+      </div>
+    </div>
+    <div class="grupo">
+      <h3>Quem recebe os pedidos</h3>
+      <label class="campo"><span>Nome</span><input id="cfg-filho" autocomplete="off" placeholder="Ex.: Marcos"></label>
+      <label class="campo"><span>Telefone com DDD</span><input id="cfg-tel" type="tel" inputmode="tel" placeholder="(11) 98765-4321"></label>
+      <div class="conectar">
+        <p>Para receber os pedidos no seu celular, abra este link nele:</p>
+        <div class="conectar__acoes"><button class="botao botao--primario" data-acao="compartilhar-link">Enviar link pro meu celular</button><button class="botao botao--claro" data-acao="testar-aviso">Testar aviso</button></div>
+      </div>
+    </div>
+    <div class="grupo">
+      <div class="grupo__cabeca"><h3>Atalhos da tela inicial</h3><button class="mais" data-acao="nova-rota">+ Novo</button></div>
+      <p class="ajuda">Cada atalho é um caminho: de onde sai, onde passa e onde chega.</p>
+      <ul class="lista-cfg" id="cfg-rotas"></ul>
+    </div>
+    <div class="grupo">
+      <div class="grupo__cabeca"><h3>Lugares</h3><button class="mais" data-acao="novo-lugar">+ Novo</button></div>
+      <ul class="lista-cfg" id="cfg-lugares"></ul>
+    </div>
+    <div class="grupo">
+      <h3>Segurança</h3>
+      <label class="campo"><span>Senha dos ajustes (4 números)</span><input id="cfg-pin" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="1234"></label>
+      <p class="ajuda">Para abrir os ajustes, segure a engrenagem por 2 segundos e digite a senha. Assim ninguém muda nada sem querer.</p>
+    </div>
+    <div class="grupo grupo--perigo">
+      <button class="link-discreto link-discreto--perigo" data-acao="apagar-tudo">Apagar tudo e começar de novo</button>
+    </div>
+  </section>
+
+  <!-- ============ EDITAR LUGAR ============ -->
+  <section class="tela tela--editar" id="v-lugar" hidden>
+    <header class="topo"><button class="voltar" data-ir="#/ajustes" aria-label="Voltar">←</button><h2 id="lugar-titulo">Novo lugar</h2></header>
+    <div class="grupo">
+      <div class="campo-foto">
+        <label class="foto-escolher foto-escolher--quadrada" id="lugar-foto-btn"><input type="file" accept="image/*" id="lugar-foto" hidden><span id="lugar-foto-prev">📷</span></label>
+        <label class="campo"><span>Nome do lugar</span><input id="lugar-nome" autocomplete="off" placeholder="Ex.: Salão Estrela"></label>
+      </div>
+      <p class="ajuda">Uma foto do lugar (ou da pessoa, se for a casa de alguém) ajuda muito a reconhecer.</p>
+    </div>
+    <div class="grupo">
+      <h3>Figura</h3>
+      <div class="emojis" id="lugar-emojis"></div>
+      <h3>Cor</h3>
+      <div class="cores" id="lugar-cores"></div>
+    </div>
+    <div class="grupo">
+      <h3>Endereço</h3>
+      <div class="busca-end">
+        <input id="lugar-busca" autocomplete="off" placeholder="Rua, número, bairro, cidade">
+        <button class="botao botao--primario" data-acao="buscar-endereco">Buscar</button>
+      </div>
+      <button class="botao botao--claro botao--bloco" data-acao="usar-gps"><span aria-hidden="true">📍</span> Estou neste lugar agora</button>
+      <ul class="resultados" id="lugar-resultados"></ul>
+      <div class="mapa" id="lugar-mapa" hidden><div class="mapa__tiles" id="lugar-tiles"></div><span class="mapa__pino" aria-hidden="true"></span><small class="mapa__credito">© OpenStreetMap</small></div>
+      <p class="endereco-escolhido" id="lugar-endereco"></p>
+    </div>
+    <div class="grupo">
+      <h3>Outras palavras para a voz</h3>
+      <label class="campo"><span>Separe por vírgula</span><input id="lugar-apelidos" autocomplete="off" placeholder="Ex.: baile, dança, forró"></label>
+      <p class="ajuda">Se ela costuma chamar o lugar de outro jeito, coloque aqui.</p>
+    </div>
+    <div class="rodape-editar">
+      <button class="link-discreto link-discreto--perigo" data-acao="excluir-lugar" id="lugar-excluir">Excluir</button>
+      <button class="botao botao--primario botao--grande" data-acao="salvar-lugar">Salvar lugar</button>
+    </div>
+  </section>
+
+  <!-- ============ EDITAR ATALHO (ROTA) ============ -->
+  <section class="tela tela--editar" id="v-rota" hidden>
+    <header class="topo"><button class="voltar" data-ir="#/ajustes" aria-label="Voltar">←</button><h2 id="rota-titulo">Novo atalho</h2></header>
+    <div class="grupo">
+      <label class="campo"><span>Nome do atalho</span><input id="rota-nome" autocomplete="off" placeholder="Ex.: Baile com a Cida"></label>
+      <p class="ajuda">É o que o app fala para ela confirmar.</p>
+    </div>
+    <div class="grupo">
+      <h3>Caminho</h3>
+      <ol class="paradas" id="rota-paradas"></ol>
+      <p class="ajuda">O primeiro é de onde sai, o último é onde chega. Os do meio viram paradas.</p>
+      <div class="adicionar-parada" id="rota-adicionar"></div>
+    </div>
+    <div class="rodape-editar">
+      <button class="link-discreto link-discreto--perigo" data-acao="excluir-rota" id="rota-excluir">Excluir</button>
+      <button class="botao botao--primario botao--grande" data-acao="salvar-rota">Salvar atalho</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- Senha dos ajustes -->
+<div class="modal" id="modal-pin" hidden>
+  <div class="modal__caixa" role="dialog" aria-modal="true" aria-labelledby="pin-titulo">
+    <h3 id="pin-titulo">Senha dos ajustes</h3>
+    <div class="pin-pontos" id="pin-pontos"><i></i><i></i><i></i><i></i></div>
+    <div class="teclado" id="teclado"></div>
+  </div>
+</div>
+
+<div class="aviso-flutuante" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
