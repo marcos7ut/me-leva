@@ -60,7 +60,7 @@
   function dadosDemo() {
     const L = (id, nome, ico, cor, end, lat, lng, apelidos) => ({ id, nome, ico, cor, end, lat, lng, apelidos });
     return {
-      canal: "demo", papel: "mae", modo: "filho", nome: "Maria", pin: "1234",
+      canal: "demo", papel: "mae", modo: "uber", nome: "Maria", pin: "1234",
       filho: { nome: "Marcos", tel: "11987654321" },
       lugares: [
         { ...L("casa", "Minha casa", "🏠", "#12A150", "Rua das Flores, 120 - Centro, Taboão da Serra - SP", -23.6094, -46.759, "casa, minha casa, voltar, embora"), casa: true },
@@ -286,7 +286,7 @@
      senão o Android abre o site em vez do aplicativo do Uber. */
   function abrirUber(p) {
     const url = linkUber(p);
-    if (demo()) { aviso("Na demonstração o Uber não abre"); return; }
+    if (demo()) { aviso("Aqui o Uber abriria com a saída e a chegada prontas"); return; }
     const w = window.open(url, "_blank", "noopener");
     if (!w) location.href = url;
   }
@@ -457,7 +457,7 @@
     // pedido aberto pelo link da notificação
     const parte = location.hash.split("/")[2];
     if (parte) { try { const d = b64.de(parte); if (d.paradas) { guardarPedido(d); marcarVisto(d); } else eventoPedido(d); } catch (e) {} }
-    if (demo() && !pedidosVistos.size) guardarPedido({ v: 1, id: "demo1", t: Date.now() - 60e3, de: "Maria", rota: "Baile com a Cida", paradas: dadosDemo().rotas[0].paradas.map((id) => { const l = dadosDemo().lugares.find((x) => x.id === id); return { nome: l.nome, ico: l.ico, cor: l.cor, end: l.end, lat: l.lat, lng: l.lng }; }) });
+    if (demo() && !pedidosVistos.size) guardarPedido({ v: 1, id: "demo1", t: Date.now() - 60e3, de: "Maria", rota: "Baile com a Cida", uber: true, paradas: dadosDemo().rotas[0].paradas.map((id) => { const l = dadosDemo().lugares.find((x) => x.id === id); return { nome: l.nome, ico: l.ico, cor: l.cor, end: l.end, lat: l.lat, lng: l.lng }; }) });
     listarPedidos();
     if (!demo() && !relogioPedidos) {
       desdePedidos = desdePedidos || "12h";
