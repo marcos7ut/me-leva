@@ -46,6 +46,7 @@ Minha mãe e uma amiga dela não leem, e saem para bailes. Toda vez alguém da f
 - Ajustes protegidos: **segurar a engrenagem por 2 s + senha de 4 números**, para ninguém mudar nada sem querer
 - **Como chamar o carro**: abrir o Uber no celular dela (padrão) ou avisar a família para chamar
 - Até **40 lugares** com busca de endereço (OpenStreetMap), **“Estou neste lugar agora”** pelo GPS e prévia no mapa; cada lugar novo **já vira um botão** na tela dela
+- **Ponto de embarque da casa**: marque um lugar como “a casa dela” e ajuste o pino tocando no mapa (ex.: a entrada da viela). Se ela estiver a até 200 m de casa, o Uber abre com a saída nesse ponto marcado; fora de casa, usa o GPS
 - Ordem dos botões ajustável (↑ ↓)
 - Atalhos com até 4 pontos: saída, 2 paradas e chegada (no modo Uber, as paradas do meio são adicionadas no próprio Uber)
 - “Outras palavras para a voz”: apelidos que ela usa para cada lugar

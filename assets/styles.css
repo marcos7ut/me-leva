@@ -332,3 +332,6 @@ body:has(.barra-demo) .tela { padding-top: calc(66px + env(safe-area-inset-top))
 .lista-cfg li .ordem button:disabled { opacity: .3; }
 .ajuda.alerta { color: #C93A2B; }
 .lista-cfg li.com-ordem > button { flex: 1; min-width: 0; }
+
+.mapa { cursor: crosshair; }
+.selo-casa { margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--roxo-suave); color: var(--roxo-escuro); font-size: 11px; font-weight: 800; vertical-align: 2px; }

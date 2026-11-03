@@ -16,7 +16,8 @@
   const CHAVE = "me-leva:v1";
   const BASE = location.origin + location.pathname;
   const AQUI = "aqui"; // "onde ela estiver" (usa o GPS na hora)
-  const MAX_LUGARES = 40, MAX_ATALHOS = 30; // cabem folgados no celular, mesmo com foto em todos
+  const MAX_LUGARES = 40, MAX_ATALHOS = 30;
+  const RAIO_CASA = 200; // metros: se ela estiver até aqui de casa, o carro busca no ponto marcado da casa // cabem folgados no celular, mesmo com foto em todos
   const EMOJIS = ["🏠", "👭", "💃", "🕺", "⛪", "🏥", "💊", "🛒", "💈", "🍽️", "🎉", "🎶", "🏦", "🚌", "🌳", "🏖️", "👨‍👩‍👧", "🧓", "🐶", "☕", "🎂", "🛍️", "🏡", "📍"];
   const CORES = ["#5B3DF5", "#FF6B5A", "#12A150", "#F59E0B", "#0EA5E9", "#E04F8F", "#8B5E3C", "#1D1A2B"];
   const CORES_CARRO = [["branco", "#FFFFFF"], ["prata", "#C9CDD3"], ["cinza", "#6B7280"], ["preto", "#111111"], ["vermelho", "#D92D20"], ["azul", "#1E4FBF"], ["verde", "#12A150"], ["bege", "#D8C3A5"]];
@@ -50,14 +51,19 @@
   const topico = (tipo) => `meleva-${cfg.canal}-${tipo}`; // p = pedidos (mãe → filho), r = respostas (filho → mãe)
   const nomeFilho = () => (cfg.filho && cfg.filho.nome) || "meu filho";
   const modoUber = () => (cfg.modo || "uber") === "uber";
+  const casaDela = () => (cfg.lugares || []).find((l) => l.casa && l.lat != null) || null;
+  const distancia = (a, b) => { const R = 6371e3, r = Math.PI / 180, dLa = (b.lat - a.lat) * r, dLo = (b.lng - a.lng) * r; const h = Math.sin(dLa / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
+  // GPS pego antes, na tela de confirmar: o Uber precisa abrir direto no toque
+  let gpsAgora = null;
+  const emCasa = () => { const c = casaDela(); return !!(c && gpsAgora && distancia(gpsAgora, c) <= RAIO_CASA); };
 
   function dadosDemo() {
     const L = (id, nome, ico, cor, end, lat, lng, apelidos) => ({ id, nome, ico, cor, end, lat, lng, apelidos });
     return {
-      canal: "demo", papel: "mae", modo: "filho", nome: "Maria", pin: "1234",
+      canal: "demo", papel: "mae", modo: "uber", nome: "Maria", pin: "1234",
       filho: { nome: "Marcos", tel: "11987654321" },
       lugares: [
-        L("casa", "Minha casa", "🏠", "#12A150", "Rua das Flores, 120 - Centro, Taboão da Serra - SP", -23.6094, -46.759, "casa, minha casa, voltar, embora"),
+        { ...L("casa", "Minha casa", "🏠", "#12A150", "Rua das Flores, 120 - Centro, Taboão da Serra - SP", -23.6094, -46.759, "casa, minha casa, voltar, embora"), casa: true },
         L("cida", "Casa da Cida", "👭", "#E04F8F", "Rua dos Ipês, 45 - Jardim Maria Rosa, Taboão da Serra - SP", -23.6201, -46.7712, "cida, amiga, comadre"),
         L("salao", "Salão Estrela", "💃", "#5B3DF5", "Av. dos Autonomistas, 1500 - Centro, Osasco - SP", -23.5329, -46.7917, "baile, dança, dançar, forró, salão"),
         L("igreja", "Igreja", "⛪", "#F59E0B", "Praça da Matriz, 10 - Centro, Taboão da Serra - SP", -23.6056, -46.7801, "missa, igreja, culto"),
@@ -238,8 +244,21 @@
     if (modoUber()) return `Vamos para ${nome(ps[ps.length - 1])}${meio.length ? ", passando na " + meio.join(" e na ") : ""}. Toque no verde para abrir o Uber, ou no vermelho para voltar.`;
     return `Vou pedir o carro. Saindo de ${nome(ps[0])}${meio.length ? ", passando na " + meio.join(" e na ") : ""}, até ${nome(ps[ps.length - 1])}. Toque no verde para pedir, ou no vermelho para voltar.`;
   }
+  function saidaReal(r) {
+    const ps = r.paradas.map(lugar).filter(Boolean);
+    if (ps[0] && ps[0].id === AQUI && ps.length > 1 && emCasa() && ps[ps.length - 1].id !== casaDela().id) ps[0] = casaDela();
+    return ps;
+  }
   function desenharConfirmar() {
-    const r = rotaPendente, ps = r.paradas.map(lugar).filter(Boolean);
+    const r = rotaPendente;
+    pintarCaminho(r);
+    falar(frase(r));
+    // pega o GPS agora para saber se ela está em casa (e redesenha a saída quando chegar)
+    gpsAgora = null;
+    if (r.paradas[0] === AQUI && casaDela()) posicao(5000).then((g) => { if (g) { gpsAgora = g; if (rotaPendente === r && document.body.dataset.tela === "confirmar") pintarCaminho(r); } });
+  }
+  function pintarCaminho(r) {
+    const ps = saidaReal(r);
     $("#conf-titulo").textContent = r.nome;
     $(".confirmar__rotulo").textContent = modoUber() ? "Vou abrir o Uber" : "Vou pedir o carro";
     $(".decidir__sim span").textContent = modoUber() ? "Sim, abrir Uber" : "Sim, pedir";
@@ -248,14 +267,13 @@
       const ico = h("span", { class: "caminho__ico" + (l.foto ? " caminho__ico--foto" : ""), style: `--cor:${l.cor}`, "aria-hidden": "true" }, l.ico); fundoFoto(ico, l.foto);
       ol.append(h("li", null, ico, h("span", { class: "caminho__txt" }, h("small", null, i === 0 ? "Sai de" : i === ps.length - 1 ? "Chega em" : "Passa em"), h("b", null, l.id === AQUI ? l.nomeMae : l.nome))));
     });
-    falar(frase(r));
   }
 
   /* ---------- enviar pedido ---------- */
-  function posicao() {
+  function posicao(idadeMax = 60000) {
     return new Promise((ok) => {
       if (!navigator.geolocation) return ok(null);
-      navigator.geolocation.getCurrentPosition((p) => ok({ lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6) }), () => ok(null), { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
+      navigator.geolocation.getCurrentPosition((p) => ok({ lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6) }), () => ok(null), { enableHighAccuracy: true, timeout: 12000, maximumAge: idadeMax });
     });
   }
   function paradasDoPedido(r, gps) {
@@ -268,19 +286,21 @@
      senão o Android abre o site em vez do aplicativo do Uber. */
   function abrirUber(p) {
     const url = linkUber(p);
-    if (demo()) { aviso("Na demonstração o Uber não abre"); return; }
+    if (demo()) { aviso("Aqui o Uber abriria com a saída e a chegada prontas"); return; }
     const w = window.open(url, "_blank", "noopener");
     if (!w) location.href = url;
   }
   function pedirPeloUber(r) {
-    const pedido = { v: 1, id: uid(), t: Date.now(), de: cfg.nome || "Mãe", rota: r.nome, uber: true, paradas: paradasDoPedido(r, null) };
+    const casa = emCasa() && r.paradas[0] === AQUI && r.paradas[r.paradas.length - 1] !== casaDela().id ? casaDela() : null;
+    const comCasa = (ps) => (casa ? [{ nome: casa.nome, ico: casa.ico, cor: casa.cor, end: casa.end || "", lat: casa.lat, lng: casa.lng }, ...ps.slice(1)] : ps);
+    const pedido = { v: 1, id: uid(), t: Date.now(), de: cfg.nome || "Mãe", rota: r.nome, uber: true, paradas: comCasa(paradasDoPedido(r, null)) };
     cfg.pedido = { ...pedido, estado: "uber" }; salvar();
     falar("Abrindo o Uber.");
     abrirUber(pedido);
     location.hash = "#/esperando";
     // avisa o filho para acompanhar (com a localização dela, se tiver GPS)
-    (r.paradas.includes(AQUI) ? posicao() : Promise.resolve(null)).then((gps) => {
-      const p = { ...pedido, paradas: paradasDoPedido(r, gps) };
+    (r.paradas.includes(AQUI) ? (gpsAgora ? Promise.resolve(gpsAgora) : posicao()) : Promise.resolve(null)).then((gps) => {
+      const p = { ...pedido, paradas: comCasa(paradasDoPedido(r, gps)) };
       if (cfg.pedido?.id === p.id) { cfg.pedido.paradas = p.paradas; salvar(); }
       return publicarPedido(p);
     }).catch(() => {});
@@ -437,7 +457,7 @@
     // pedido aberto pelo link da notificação
     const parte = location.hash.split("/")[2];
     if (parte) { try { const d = b64.de(parte); if (d.paradas) { guardarPedido(d); marcarVisto(d); } else eventoPedido(d); } catch (e) {} }
-    if (demo() && !pedidosVistos.size) guardarPedido({ v: 1, id: "demo1", t: Date.now() - 60e3, de: "Maria", rota: "Baile com a Cida", paradas: dadosDemo().rotas[0].paradas.map((id) => { const l = dadosDemo().lugares.find((x) => x.id === id); return { nome: l.nome, ico: l.ico, cor: l.cor, end: l.end, lat: l.lat, lng: l.lng }; }) });
+    if (demo() && !pedidosVistos.size) guardarPedido({ v: 1, id: "demo1", t: Date.now() - 60e3, de: "Maria", rota: "Baile com a Cida", uber: true, paradas: dadosDemo().rotas[0].paradas.map((id) => { const l = dadosDemo().lugares.find((x) => x.id === id); return { nome: l.nome, ico: l.ico, cor: l.cor, end: l.end, lat: l.lat, lng: l.lng }; }) });
     listarPedidos();
     if (!demo() && !relogioPedidos) {
       desdePedidos = desdePedidos || "12h";
@@ -554,7 +574,7 @@
     const lugares = $("#cfg-lugares"); lugares.textContent = "";
     (cfg.lugares || []).forEach((l) => {
       const mini = h("span", { class: "mini", style: `--cor:${l.cor}` }, l.foto ? "" : l.ico); fundoFoto(mini, l.foto);
-      lugares.append(h("li", null, h("button", { onclick: () => (location.hash = "#/lugar/" + l.id) }, mini, h("div", null, h("b", null, l.nome), l.lat != null ? h("small", null, l.end || "Endereço salvo") : h("small", { class: "alerta" }, "Falta o endereço")), h("span", { class: "seta" }, "›"))));
+      lugares.append(h("li", null, h("button", { onclick: () => (location.hash = "#/lugar/" + l.id) }, mini, h("div", null, h("b", null, l.nome, l.casa ? h("span", { class: "selo-casa" }, "embarque") : null), l.lat != null ? h("small", null, l.end || "Endereço salvo") : h("small", { class: "alerta" }, "Falta o endereço")), h("span", { class: "seta" }, "›"))));
     });
     if (!lugares.children.length) lugares.append(h("li", { class: "ajuda" }, "Comece pela casa dela."));
   }
@@ -610,6 +630,7 @@
     rascunho = l ? { ...l } : { id: uid(), nome: "", ico: "🏠", cor: CORES[(cfg.lugares || []).length % CORES.length], apelidos: "" };
     $("#lugar-titulo").textContent = l ? "Editar lugar" : "Novo lugar";
     $("#lugar-excluir").hidden = !l;
+    $("#lugar-casa").checked = l ? !!l.casa : !casaDela() && !(cfg.lugares || []).length;
     $("#lugar-atalho").checked = l ? (cfg.rotas || []).some((r) => r.auto === l.id) : (cfg.rotas || []).length < MAX_ATALHOS;
     $("#lugar-nome").value = rascunho.nome; $("#lugar-apelidos").value = rascunho.apelidos || ""; $("#lugar-busca").value = ""; $("#lugar-resultados").textContent = "";
     pintarLugar();
@@ -623,19 +644,31 @@
     CORES.forEach((c) => co.append(h("button", { type: "button", style: `--c:${c}`, "aria-pressed": String(c === r.cor), "aria-label": "Cor " + c, onclick: () => { r.cor = c; pintarLugar(); } })));
     $("#lugar-endereco").textContent = r.lat != null ? r.end || `${r.lat}, ${r.lng}` : "";
     mostrarMapa(r.lat, r.lng);
+    $("#lugar-mapa-dica").hidden = r.lat == null;
   }
   $("#lugar-foto").addEventListener("change", (e) => lerFoto(e.target, (d) => { rascunho.foto = d; pintarLugar(); }));
   $("#lugar-foto-btn").addEventListener("contextmenu", (e) => { e.preventDefault(); if (rascunho?.foto && confirm("Tirar a foto?")) { delete rascunho.foto; pintarLugar(); } });
+  const ZOOM_MAPA = 18;
   function mostrarMapa(lat, lng) {
     const box = $("#lugar-mapa"); if (lat == null) { box.hidden = true; return; }
     box.hidden = false;
-    const z = 16, n = 2 ** z, xt = ((lng + 180) / 360) * n, la = (lat * Math.PI) / 180, yt = ((1 - Math.log(Math.tan(la) + 1 / Math.cos(la)) / Math.PI) / 2) * n;
+    const z = ZOOM_MAPA, n = 2 ** z, xt = ((lng + 180) / 360) * n, la = (lat * Math.PI) / 180, yt = ((1 - Math.log(Math.tan(la) + 1 / Math.cos(la)) / Math.PI) / 2) * n;
     const tx = Math.floor(xt), ty = Math.floor(yt), px = (xt - tx) * 256, py = (yt - ty) * 256;
     const tiles = $("#lugar-tiles"); tiles.textContent = "";
     for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) tiles.append(h("img", { alt: "", loading: "lazy", src: `https://tile.openstreetmap.org/${z}/${tx + dx}/${ty + dy}.png`, style: `left:${(dx + 1) * 256}px;top:${(dy + 1) * 256}px` }));
     const w = box.clientWidth || 320, hgt = box.clientHeight || 180;
     tiles.style.left = `${w / 2 - (256 + px)}px`; tiles.style.top = `${hgt / 2 - (256 + py)}px`;
   }
+  // tocar no mapa move o pino: serve para marcar o ponto exato (ex.: a entrada da viela)
+  $("#lugar-mapa").addEventListener("click", (e) => {
+    const r = rascunho; if (!r || r.lat == null) return;
+    const box = e.currentTarget.getBoundingClientRect(), n = 256 * 2 ** ZOOM_MAPA;
+    const la = (r.lat * Math.PI) / 180, px = ((r.lng + 180) / 360) * n, py = ((1 - Math.log(Math.tan(la) + 1 / Math.cos(la)) / Math.PI) / 2) * n;
+    const nx = px + (e.clientX - box.left - box.width / 2), ny = py + (e.clientY - box.top - box.height / 2);
+    r.lng = +((nx / n) * 360 - 180).toFixed(6);
+    r.lat = +((Math.atan(Math.sinh(Math.PI * (1 - (2 * ny) / n))) * 180) / Math.PI).toFixed(6);
+    pintarLugar(); navigator.vibrate?.(30); aviso("Ponto ajustado");
+  });
   async function buscarEndereco() {
     const q = $("#lugar-busca").value.trim(); if (q.length < 4) return aviso("Escreva a rua, o número e a cidade");
     const ul = $("#lugar-resultados"); ul.textContent = ""; ul.append(h("li", { class: "ajuda" }, "Procurando…"));
@@ -653,7 +686,7 @@
   }
   async function usarGps() {
     aviso("Pegando a localização…");
-    const p = await posicao(); if (!p) return aviso("Não consegui a localização. Ative o GPS.");
+    const p = await posicao(0); if (!p) return aviso("Não consegui a localização. Ative o GPS.");
     Object.assign(rascunho, p, { end: "" }); pintarLugar();
     try { const r = await fetch(`${NOMINATIM}/reverse?format=jsonv2&addressdetails=1&accept-language=pt-BR&lat=${p.lat}&lon=${p.lng}`); const it = await r.json(); rascunho.end = enderecoCurto(it, ""); pintarLugar(); } catch (e) {}
   }
@@ -664,6 +697,7 @@
     cfg.lugares = cfg.lugares || []; cfg.rotas = cfg.rotas || [];
     const i = cfg.lugares.findIndex((l) => l.id === r.id);
     if (i < 0 && cfg.lugares.length >= MAX_LUGARES) return aviso(`Já são ${MAX_LUGARES} lugares. Exclua um que ela não usa mais.`);
+    if ($("#lugar-casa").checked) { cfg.lugares.forEach((l) => delete l.casa); r.casa = true; } else delete r.casa;
     if (i >= 0) cfg.lugares[i] = r; else cfg.lugares.push(r);
     // atalho direto: sai de onde ela estiver e vai até este lugar
     const auto = cfg.rotas.find((x) => x.auto === r.id);
