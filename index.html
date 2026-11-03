@@ -100,7 +100,7 @@
     <h2 class="esperando__titulo" id="esp-titulo">Avisei o Marcos</h2>
     <p class="esperando__sub" id="esp-sub">Espere um pouquinho, ele vai chamar o carro.</p>
     <ol class="etapas" id="etapas">
-      <li data-etapa="enviado"><i></i>Pedido enviado</li>
+      <li data-etapa="enviado"><i></i><span id="etapa-enviado">Pedido enviado</span></li>
       <li data-etapa="visto"><i></i><span id="etapa-visto">Marcos viu</span></li>
       <li data-etapa="carro"><i></i>Carro a caminho</li>
     </ol>
@@ -110,10 +110,11 @@
       <div class="carro__min"><b id="carro-min">6</b><small>min</small></div>
     </div>
     <div class="esperando__acoes">
+      <button class="botao botao--primario botao--grande" id="esp-uber" data-acao="abrir-uber" hidden><span aria-hidden="true">🚗</span> Abrir o Uber</button>
       <button class="botao botao--claro botao--grande" data-acao="ouvir-esperando"><span aria-hidden="true">🔊</span> Ouvir de novo</button>
       <a class="botao botao--verde botao--grande" id="esp-ligar" href="#"><span aria-hidden="true">📞</span> Ligar</a>
       <button class="botao botao--primario botao--grande" id="esp-entrei" data-acao="entrei" hidden><span aria-hidden="true">✅</span> Já entrei no carro</button>
-      <button class="link-discreto" data-acao="cancelar-pedido">Cancelar pedido</button>
+      <button class="link-discreto" id="esp-sair" data-acao="cancelar-pedido">Cancelar pedido</button>
     </div>
   </section>
 
@@ -148,7 +149,13 @@
       </div>
     </div>
     <div class="grupo">
-      <h3>Quem recebe os pedidos</h3>
+      <h3>Como chamar o carro</h3>
+      <label class="opcao"><input type="radio" name="cfg-modo" value="uber"><span><b>Abrir o Uber no celular dela</b><small>Ela toca no lugar e o Uber abre com a saída e a chegada prontas. Deixe o Uber instalado e com a conta entrada neste celular.</small></span></label>
+      <label class="opcao"><input type="radio" name="cfg-modo" value="filho"><span><b>Avisar a família para chamar</b><small>O pedido vai para o seu celular e você chama o carro por ela.</small></span></label>
+    </div>
+    <div class="grupo">
+      <h3>Quem acompanha e avisa o carro</h3>
+      <p class="ajuda">Quando o carro for aceito, você manda o modelo, a cor e a placa e o app fala para ela. Dica: coloque ela no seu <b>Perfil Família do Uber</b> para ver o carro dela no seu app.</p>
       <label class="campo"><span>Nome</span><input id="cfg-filho" autocomplete="off" placeholder="Ex.: Marcos"></label>
       <label class="campo"><span>Telefone com DDD</span><input id="cfg-tel" type="tel" inputmode="tel" placeholder="(11) 98765-4321"></label>
       <div class="conectar">
@@ -157,12 +164,12 @@
       </div>
     </div>
     <div class="grupo">
-      <div class="grupo__cabeca"><h3>Atalhos da tela inicial</h3><button class="mais" data-acao="nova-rota">+ Novo</button></div>
-      <p class="ajuda">Cada atalho é um caminho: de onde sai, onde passa e onde chega.</p>
+      <div class="grupo__cabeca"><h3>Atalhos da tela inicial <small class="contador" id="cont-rotas"></small></h3><button class="mais" data-acao="nova-rota">+ Novo</button></div>
+      <p class="ajuda">É o que aparece na tela dela, nesta ordem (use ↑ ↓). Cada lugar novo já vira um atalho; use “+ Novo” para caminhos com parada, como passar na casa da amiga.</p>
       <ul class="lista-cfg" id="cfg-rotas"></ul>
     </div>
     <div class="grupo">
-      <div class="grupo__cabeca"><h3>Lugares</h3><button class="mais" data-acao="novo-lugar">+ Novo</button></div>
+      <div class="grupo__cabeca"><h3>Lugares <small class="contador" id="cont-lugares"></small></h3><button class="mais" data-acao="novo-lugar">+ Novo</button></div>
       <ul class="lista-cfg" id="cfg-lugares"></ul>
     </div>
     <div class="grupo">
@@ -201,6 +208,9 @@
       <ul class="resultados" id="lugar-resultados"></ul>
       <div class="mapa" id="lugar-mapa" hidden><div class="mapa__tiles" id="lugar-tiles"></div><span class="mapa__pino" aria-hidden="true"></span><small class="mapa__credito">© OpenStreetMap</small></div>
       <p class="endereco-escolhido" id="lugar-endereco"></p>
+    </div>
+    <div class="grupo">
+      <label class="opcao"><input type="checkbox" id="lugar-atalho"><span><b>Mostrar na tela dela</b><small>Vira um botão: ela toca e vai de onde estiver até este lugar.</small></span></label>
     </div>
     <div class="grupo">
       <h3>Outras palavras para a voz</h3>

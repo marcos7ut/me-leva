@@ -1,6 +1,8 @@
 # Me Leva
 
-**Chamar carro sem precisar ler.** Quem não sabe ler escolhe para onde quer ir **tocando numa figura ou falando**. Um familiar recebe o pedido com o caminho pronto, abre o Uber já preenchido e responde com o carro. Aí o app **fala** o modelo, a cor, a placa e em quantos minutos ele chega.
+**Chamar carro sem precisar ler.** Quem não sabe ler escolhe para onde quer ir **tocando numa figura ou falando**, e o **Uber abre no celular dela** já com a saída e a chegada prontas. Um familiar acompanha e manda os dados do carro, e o app **fala** o modelo, a cor, a placa e em quantos minutos ele chega.
+
+Também dá para usar o modo antigo, em que o pedido vai para o familiar e **ele** chama o carro (Ajustes → “Como chamar o carro”).
 
 🔗 **Demonstração:** https://marcos7ut.github.io/me-leva/ (toque em “Ver demonstração”)
 
@@ -26,7 +28,8 @@ Minha mãe e uma amiga dela não leem, e saem para bailes. Toda vez alguém da f
 ```
 
 ### Para quem usa (sem ler nada)
-- **Atalhos com figura, cor e foto** do lugar ou da pessoa (ex.: a foto da amiga na casa dela)
+- **Um botão por lugar** (até 30 na tela), com figura, cor e foto do lugar ou da pessoa: tocou, confirmou no verde, o **Uber abre** com a saída (onde ela está) e a chegada preenchidas
+- Ao voltar do Uber, o app **lembra falando** o que fazer e tem o botão **Abrir o Uber** de novo
 - **Comando de voz**: “quero ir pro baile”, “me leva na Cida”, “quero voltar pra casa”, “liga pro Marcos”
 - **Tudo é falado**: o caminho antes de confirmar, o andamento do pedido e os dados do carro, com a **placa soletrada**
 - Só dois botões para decidir: **✅ verde** e **✕ vermelho**
@@ -41,8 +44,10 @@ Minha mãe e uma amiga dela não leem, e saem para bailes. Toda vez alguém da f
 
 ### Para quem configura
 - Ajustes protegidos: **segurar a engrenagem por 2 s + senha de 4 números**, para ninguém mudar nada sem querer
-- Lugares com busca de endereço (OpenStreetMap), **“Estou neste lugar agora”** pelo GPS e prévia no mapa
-- Atalhos com até 4 pontos: saída, 2 paradas e chegada
+- **Como chamar o carro**: abrir o Uber no celular dela (padrão) ou avisar a família para chamar
+- Até **40 lugares** com busca de endereço (OpenStreetMap), **“Estou neste lugar agora”** pelo GPS e prévia no mapa; cada lugar novo **já vira um botão** na tela dela
+- Ordem dos botões ajustável (↑ ↓)
+- Atalhos com até 4 pontos: saída, 2 paradas e chegada (no modo Uber, as paradas do meio são adicionadas no próprio Uber)
 - “Outras palavras para a voz”: apelidos que ela usa para cada lugar
 - Conectar o celular do filho por **um link enviado no WhatsApp**
 
@@ -51,7 +56,7 @@ Minha mãe e uma amiga dela não leem, e saem para bailes. Toda vez alguém da f
 | | |
 |---|---|
 | **Sem servidor próprio** | Os dados ficam no `localStorage` do celular. Os pedidos trafegam pelo [ntfy.sh](https://ntfy.sh) (gratuito), num canal com nome aleatório de 24 caracteres criado em cada instalação. |
-| **Integração com o Uber** | A API que pede corridas é restrita a parceiros aprovados pela Uber, então o app usa os **links universais** (`m.uber.com/ul`), que abrem o Uber com saída e chegada preenchidas. A parada e a confirmação ficam com o familiar, que é o caminho mais seguro. |
+| **Integração com o Uber** | A API que pede corridas é restrita a parceiros aprovados pela Uber, então o app usa os **links universais** (`m.uber.com/ul`), que abrem o Uber com saída e chegada preenchidas. O link é aberto direto no toque dela, para o Android abrir o aplicativo do Uber e não o site. Os dados do carro chegam pelo familiar (ex.: pelo Perfil Família do Uber), porque o app não tem como ler a tela do Uber. |
 | **Voz** | Web Speech API: reconhecimento em pt-BR (Chrome no Android) e fala com a voz do próprio celular. O entendimento compara as palavras ditas com os nomes e apelidos dos lugares e dá mais peso ao destino. |
 | **Acessibilidade** | Alvos de toque de 64 a 120 px, alto contraste, tema escuro, respeito a “reduzir movimento”, e todo conteúdo importante também falado. |
 | **PWA** | Instala na tela inicial e abre sem internet (service worker). |

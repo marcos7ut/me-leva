@@ -317,3 +317,18 @@ body:has(.barra-demo) .tela { padding-top: calc(66px + env(safe-area-inset-top))
 .tela--esperando.chegando .radar { width: 120px; height: 120px; margin-top: 0; }
 .tela--esperando.chegando .radar span { width: 80px; height: 80px; font-size: 42px; }
 .tela--esperando.chegando .esperando__titulo { font-size: 26px; }
+
+/* ---------- muitos atalhos, opções e ordem ---------- */
+.atalhos--muitos .atalho { aspect-ratio: 1 / .86; }
+.contador { font-size: 13px; font-weight: 600; color: var(--tinta-3); margin-left: 6px; }
+.opcao { display: flex; gap: 12px; align-items: flex-start; background: var(--fundo-2); border-radius: 18px; padding: 14px; cursor: pointer; }
+.opcao + .opcao { margin-top: 8px; }
+.opcao input { width: 22px; height: 22px; margin: 2px 0 0; flex: none; accent-color: var(--roxo); }
+.opcao b { display: block; font-size: 16px; }
+.opcao small { display: block; font-size: 13px; color: var(--tinta-3); margin-top: 2px; line-height: 1.4; }
+.lista-cfg li.com-ordem { display: flex; gap: 6px; align-items: center; }
+.lista-cfg li .ordem { display: flex; flex-direction: column; gap: 4px; flex: none; }
+.lista-cfg li .ordem button { width: 38px; height: 30px; padding: 0; justify-content: center; border-radius: 10px; font-size: 15px; }
+.lista-cfg li .ordem button:disabled { opacity: .3; }
+.ajuda.alerta { color: #C93A2B; }
+.lista-cfg li.com-ordem > button { flex: 1; min-width: 0; }

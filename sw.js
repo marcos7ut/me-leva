@@ -1,6 +1,6 @@
 // Me Leva: abre sem internet depois da primeira visita.
 // Mude a VERSAO sempre que atualizar o app.
-const VERSAO = "me-leva-v1";
+const VERSAO = "me-leva-v2";
 const ARQUIVOS = ["./", "index.html", "assets/styles.css", "assets/app.js", "assets/icone.svg", "assets/icone-192.png", "assets/icone-512.png", "manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {
